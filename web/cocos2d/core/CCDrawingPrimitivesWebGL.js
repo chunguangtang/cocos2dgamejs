@@ -61,7 +61,6 @@ cc.DrawingPrimitiveWebGL = cc.Class.extend(/** @lends cc.DrawingPrimitiveWebGL# 
             _t._shader = cc.shaderCache.programForKey(cc.SHADER_POSITION_UCOLOR);
             _t._shader._addUniformLocation(this._colorLocation);
             _t._shader._addUniformLocation(this._pointSizeLocation);
-            _t._glProgramState = cc.GLProgramState.getOrCreateWithGLProgram(_t._shader);
 
             _t._initialized = true;
         }
@@ -82,7 +81,7 @@ cc.DrawingPrimitiveWebGL = cc.Class.extend(/** @lends cc.DrawingPrimitiveWebGL# 
         this.lazy_init();
 
         var glContext = this._renderContext;
-        this._glProgramState.apply();
+        this._shader.use();
         this._shader.setUniformForModelViewAndProjectionMatrixWithMat4();
         glContext.enableVertexAttribArray(cc.VERTEX_ATTRIB_POSITION);
         this._shader.setUniformLocationWith4fv(this._colorLocation, this._colorArray);
@@ -111,7 +110,7 @@ cc.DrawingPrimitiveWebGL = cc.Class.extend(/** @lends cc.DrawingPrimitiveWebGL# 
         this.lazy_init();
 
         var glContext = this._renderContext;
-        this._glProgramState.apply();
+        this._shader.use();
         this._shader.setUniformForModelViewAndProjectionMatrixWithMat4();
         glContext.enableVertexAttribArray(cc.VERTEX_ATTRIB_POSITION);
         this._shader.setUniformLocationWith4fv(this._colorLocation, this._colorArray);
@@ -146,7 +145,7 @@ cc.DrawingPrimitiveWebGL = cc.Class.extend(/** @lends cc.DrawingPrimitiveWebGL# 
         this.lazy_init();
 
         var glContext = this._renderContext;
-        this._glProgramState.apply();
+        this._shader.use();
         this._shader.setUniformForModelViewAndProjectionMatrixWithMat4();
         glContext.enableVertexAttribArray(cc.VERTEX_ATTRIB_POSITION);
         this._shader.setUniformLocationWith4fv(this._colorLocation, this._colorArray);
@@ -201,7 +200,7 @@ cc.DrawingPrimitiveWebGL = cc.Class.extend(/** @lends cc.DrawingPrimitiveWebGL# 
         this.lazy_init();
 
         var glContext = this._renderContext;
-        this._glProgramState.apply();
+        this._shader.use();
         this._shader.setUniformForModelViewAndProjectionMatrixWithMat4();
         glContext.enableVertexAttribArray(cc.VERTEX_ATTRIB_POSITION);
         this._shader.setUniformLocationWith4fv(this._colorLocation, this._colorArray);
@@ -232,7 +231,7 @@ cc.DrawingPrimitiveWebGL = cc.Class.extend(/** @lends cc.DrawingPrimitiveWebGL# 
             this.setDrawColor(color.r, color.g, color.b, color.a);
 
         var glContext = this._renderContext;
-        this._glProgramState.apply();
+        this._shader.use();
         this._shader.setUniformForModelViewAndProjectionMatrixWithMat4();
         glContext.enableVertexAttribArray(cc.VERTEX_ATTRIB_POSITION);
         this._shader.setUniformLocationWith4fv(this._colorLocation, this._colorArray);
@@ -280,7 +279,7 @@ cc.DrawingPrimitiveWebGL = cc.Class.extend(/** @lends cc.DrawingPrimitiveWebGL# 
         vertices[(segments + 1) * 2 + 1] = center.y;
 
         var glContext = this._renderContext;
-        this._glProgramState.apply();
+        this._shader.use();
         this._shader.setUniformForModelViewAndProjectionMatrixWithMat4();
         glContext.enableVertexAttribArray(cc.VERTEX_ATTRIB_POSITION);
         this._shader.setUniformLocationWith4fv(this._colorLocation, this._colorArray);
@@ -318,7 +317,7 @@ cc.DrawingPrimitiveWebGL = cc.Class.extend(/** @lends cc.DrawingPrimitiveWebGL# 
         vertices[segments * 2 + 1] = destination.y;
 
         var glContext = this._renderContext;
-        this._glProgramState.apply();
+        this._shader.use();
         this._shader.setUniformForModelViewAndProjectionMatrixWithMat4();
         glContext.enableVertexAttribArray(cc.VERTEX_ATTRIB_POSITION);
         this._shader.setUniformLocationWith4fv(this._colorLocation, this._colorArray);
@@ -357,7 +356,7 @@ cc.DrawingPrimitiveWebGL = cc.Class.extend(/** @lends cc.DrawingPrimitiveWebGL# 
         vertices[segments * 2 + 1] = destination.y;
 
         var glContext = this._renderContext;
-        this._glProgramState.apply();
+        this._shader.use();
         this._shader.setUniformForModelViewAndProjectionMatrixWithMat4();
         glContext.enableVertexAttribArray(cc.VERTEX_ATTRIB_POSITION);
         this._shader.setUniformLocationWith4fv(this._colorLocation, this._colorArray);
@@ -417,7 +416,7 @@ cc.DrawingPrimitiveWebGL = cc.Class.extend(/** @lends cc.DrawingPrimitiveWebGL# 
         }
 
         var glContext = this._renderContext;
-        this._glProgramState.apply();
+        this._shader.use();
         this._shader.setUniformForModelViewAndProjectionMatrixWithMat4();
         glContext.enableVertexAttribArray(cc.VERTEX_ATTRIB_POSITION);
         this._shader.setUniformLocationWith4fv(this._colorLocation, this._colorArray);

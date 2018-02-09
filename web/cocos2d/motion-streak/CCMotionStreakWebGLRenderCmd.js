@@ -22,8 +22,8 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-cc.MotionStreak.WebGLRenderCmd = function (renderableObject) {
-    this._rootCtor(renderableObject);
+cc.MotionStreak.WebGLRenderCmd = function(renderableObject){
+    cc.Node.WebGLRenderCmd.call(this, renderableObject);
     this._needDraw = true;
     this._matrix = new cc.math.Matrix4();
     this._matrix.identity();
@@ -33,7 +33,7 @@ cc.MotionStreak.WebGLRenderCmd = function (renderableObject) {
 cc.MotionStreak.WebGLRenderCmd.prototype = Object.create(cc.Node.WebGLRenderCmd.prototype);
 cc.MotionStreak.WebGLRenderCmd.prototype.constructor = cc.Sprite.WebGLRenderCmd;
 
-cc.MotionStreak.WebGLRenderCmd.prototype.rendering = function (ctx) {
+cc.MotionStreak.WebGLRenderCmd.prototype.rendering = function(ctx){
     var node = this._node;
     if (node._nuPoints <= 1)
         return;
@@ -49,7 +49,8 @@ cc.MotionStreak.WebGLRenderCmd.prototype.rendering = function (ctx) {
         this._matrix.mat[5] = wt.d;
         this._matrix.mat[13] = wt.ty;
 
-        this._glProgramState.apply(this._matrix);
+        this._shaderProgram.use();
+        this._shaderProgram._setUniformForMVPMatrixWithMat4(this._matrix);
         cc.glBlendFunc(node._blendFunc.src, node._blendFunc.dst);
 
         cc.glBindTexture2D(node.texture);

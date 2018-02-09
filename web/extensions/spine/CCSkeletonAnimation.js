@@ -24,17 +24,35 @@
  THE SOFTWARE.
  ****************************************************************************/
 
+/**
+ * @ignore
+ */
+sp._atlasPage_createTexture_webGL = function (self, path) {
+    var texture = cc.textureCache.addImage(path);
+    self.rendererObject = new cc.TextureAtlas(texture, 128);
+    self.width = texture.getPixelsWide();
+    self.height = texture.getPixelsHigh();
+};
+
+sp._atlasPage_createTexture_canvas = function(self, path) {
+    self._texture = cc.textureCache.addImage(path);
+};
+
+sp._atlasPage_disposeTexture = function (self) {
+    self.rendererObject.release();
+};
+
 sp._atlasLoader = {
     spAtlasFile:null,
     setAtlasFile:function(spAtlasFile){
         this.spAtlasFile = spAtlasFile;
     },
-    load:function(line){
+    load:function(page, line, spAtlas){
         var texturePath = cc.path.join(cc.path.dirname(this.spAtlasFile), line);
-        var texture = cc.textureCache.addImage(texturePath);
-        var tex = new sp.SkeletonTexture({ width: texture.getPixelsWide(), height: texture.getPixelsHigh() });
-        tex.setRealTexture(texture);
-        return tex;
+        if (cc._renderType === cc.game.RENDER_TYPE_WEBGL)
+            sp._atlasPage_createTexture_webGL(page,texturePath);
+        else
+            sp._atlasPage_createTexture_canvas(page,texturePath);
     },
     unload:function(obj){
     }
@@ -47,86 +65,28 @@ sp._atlasLoader = {
  */
 sp.ANIMATION_EVENT_TYPE = {
     START: 0,
-    INTERRUPT: 1,
-    END: 2,
-    DISPOSE: 3,
-    COMPLETE: 4,
-    EVENT: 5
+    END: 1,
+    COMPLETE: 2,
+    EVENT: 3
 };
 
-sp.TrackEntryListeners = function (startListener, endListener, completeListener, eventListener, interruptListener, disposeListener) {
+sp.TrackEntryListeners = function(startListener, endListener, completeListener, eventListener){
     this.startListener = startListener || null;
     this.endListener = endListener || null;
     this.completeListener = completeListener || null;
     this.eventListener = eventListener || null;
-    this.interruptListener = interruptListener || null;
-    this.disposeListener = disposeListener || null;
-    this.callback = null;
-    this.callbackTarget = null;
-    this.skeletonNode = null;
-};
-
-var proto = sp.TrackEntryListeners.prototype;
-proto.start = function(trackEntry) {
-    if (this.startListener) {
-        this.startListener(trackEntry);
-    }
-    if (this.callback) {
-        this.callback.call(this.callbackTarget, this.skeletonNode, trackEntry, sp.ANIMATION_EVENT_TYPE.START, null, 0);
-    }
-};
-
-proto.interrupt = function(trackEntry) {
-    if (this.interruptListener) {
-        this.interruptListener(trackEntry);
-    }
-    if (this.callback) {
-        this.callback.call(this.callbackTarget, this.skeletonNode, trackEntry, sp.ANIMATION_EVENT_TYPE.INTERRUPT, null, 0);
-    }
-};
-
-proto.end = function (trackEntry) {
-    if (this.endListener) {
-        this.endListener(trackEntry);
-    }
-    if (this.callback) {
-        this.callback.call(this.callbackTarget, this.skeletonNode, trackEntry, sp.ANIMATION_EVENT_TYPE.END, null, 0);
-    }
-};
-
-proto.dispose = function (trackEntry) {
-    if (this.disposeListener) {
-        this.disposeListener(trackEntry);
-    }
-    if (this.callback) {
-        this.callback.call(this.callbackTarget, this.skeletonNode, trackEntry, sp.ANIMATION_EVENT_TYPE.DISPOSE, null, 0);
-    }
-};
-
-proto.complete = function (trackEntry) {
-    var loopCount = Math.floor(trackEntry.trackTime / trackEntry.animationEnd);
-    if (this.completeListener) {
-        this.completeListener(trackEntry, loopCount);
-    }
-    if (this.callback) {
-        this.callback.call(this.callbackTarget, this.skeletonNode, trackEntry, sp.ANIMATION_EVENT_TYPE.COMPLETE, null, loopCount);
-    }
-};
-
-proto.event = function (trackEntry, event) {
-    if (this.eventListener) {
-        this.eventListener(trackEntry, event);
-    }
-    if (this.callback) {
-        this.callback.call(this.callbackTarget, this.skeletonNode, trackEntry, sp.ANIMATION_EVENT_TYPE.EVENT, event, 0);
-    }
 };
 
 sp.TrackEntryListeners.getListeners = function(entry){
-    if(!entry.listener){
-        entry.listener = new sp.TrackEntryListeners();
+    if(!entry.rendererObject){
+        entry.rendererObject = new sp.TrackEntryListeners();
+        entry.listener = sp.trackEntryCallback;
     }
-    return entry.listener;
+    return entry.rendererObject;
+};
+
+sp.trackEntryCallback = function(state, trackIndex, type, event, loopCount) {
+    state.rendererObject.onTrackEntryEvent(trackIndex, type, event, loopCount);
 };
 
 /**
@@ -139,9 +99,14 @@ sp.TrackEntryListeners.getListeners = function(entry){
  */
 sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
     _state: null,
+    _target: null,
+    _callback: null,
 
     _ownsAnimationStateData: false,
-    _listener: null,
+    _startListener: null,
+    _endListener: null,
+    _completeListener: null,
+    _eventListener: null,
 
     /**
      * Initializes a sp.SkeletonAnimation. please do not call this function by yourself, you should pass the parameters to constructor to initialize it.
@@ -155,13 +120,15 @@ sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
 
     /**
      * Sets animation state data to sp.SkeletonAnimation.
-     * @param {sp.spine.AnimationStateData} stateData
+     * @param {spine.AnimationStateData} stateData
      */
     setAnimationStateData: function (stateData) {
         var state = new spine.AnimationState(stateData);
-        this._listener = new sp.TrackEntryListeners();
         state.rendererObject = this;
-        state.addListener(this._listener);
+        state.onStart = this._onAnimationStateStart.bind(this);
+        state.onComplete = this._onAnimationStateComplete.bind(this);
+        state.onEnd = this._onAnimationStateEnd.bind(this);
+        state.onEvent = this._onAnimationStateEvent.bind(this);
         this._state = state;
     },
 
@@ -172,7 +139,7 @@ sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
      * @param {Number} duration
      */
     setMix: function (fromAnimation, toAnimation, duration) {
-        this._state.data.setMixWith(fromAnimation, toAnimation, duration);
+        this._state.data.setMixByName(fromAnimation, toAnimation, duration);
     },
 
     /**
@@ -181,9 +148,8 @@ sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
      * @param {Function} callback
      */
     setAnimationListener: function (target, callback) {
-        this._listener.callbackTarget = target;
-        this._listener.callback = callback;
-        this._listener.skeletonNode = this;
+        this._target = target;
+        this._callback = callback;
     },
 
     /**
@@ -191,7 +157,7 @@ sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
      * @param {Number} trackIndex
      * @param {String} name
      * @param {Boolean} loop
-     * @returns {sp.spine.TrackEntry|null}
+     * @returns {spine.TrackEntry|null}
      */
     setAnimation: function (trackIndex, name, loop) {
         var animation = this._skeleton.data.findAnimation(name);
@@ -199,7 +165,7 @@ sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
             cc.log("Spine: Animation not found: " + name);
             return null;
         }
-        return this._state.setAnimationWith(trackIndex, animation, loop);
+        return this._state.setAnimation(trackIndex, animation, loop);
     },
 
     /**
@@ -208,7 +174,7 @@ sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
      * @param {String} name
      * @param {Boolean} loop
      * @param {Number} [delay=0]
-     * @returns {sp.spine.TrackEntry|null}
+     * @returns {spine.TrackEntry|null}
      */
     addAnimation: function (trackIndex, name, loop, delay) {
         delay = delay == null ? 0 : delay;
@@ -217,22 +183,13 @@ sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
             cc.log("Spine: Animation not found:" + name);
             return null;
         }
-        return this._state.addAnimationWith(trackIndex, animation, loop, delay);
-    },
-
-    /**
-     * Find animation with specified name
-     * @param {String} name
-     * @returns {sp.spine.Animation|null}
-     */
-    findAnimation: function (name) {
-        return this._skeleton.data.findAnimation(name);
+        return this._state.addAnimation(trackIndex, animation, loop, delay);
     },
 
     /**
      * Returns track entry by trackIndex.
      * @param trackIndex
-     * @returns {sp.spine.TrackEntry|null}
+     * @returns {spine.TrackEntry|null}
      */
     getCurrent: function (trackIndex) {
         return this._state.getCurrent(trackIndex);
@@ -262,7 +219,6 @@ sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
     update: function (dt) {
         this._super(dt);
         dt *= this._timeScale;
-        this._renderCmd.setDirtyFlag(cc.Node._dirtyFlags.contentDirty);
         this._state.update(dt);
         this._state.apply(this._skeleton);
         this._skeleton.updateWorldTransform();
@@ -274,15 +230,7 @@ sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
      * @param {function} listener
      */
     setStartListener: function(listener){
-        this._listener.startListener = listener;
-    },
-
-    /**
-     * Set the interrupt listener
-     * @param {function} listener
-     */
-    setInterruptListener: function(listener) {
-        this._listener.interruptListener = listener;
+        this._startListener = listener;
     },
 
     /**
@@ -290,39 +238,23 @@ sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
      * @param {function} listener
      */
     setEndListener: function(listener) {
-        this._listener.endListener = listener;
-    },
-
-    /**
-     * Set the dispose listener
-     * @param {function} listener
-     */
-    setDisposeListener: function(listener) {
-        this._listener.disposeListener = listener;
+        this._endListener = listener;
     },
 
     setCompleteListener: function(listener) {
-        this._listener.completeListener = listener;
+        this._completeListener = listener;
     },
 
     setEventListener: function(listener){
-        this._listener.eventListener = listener;
+        this._eventListener = listener;
     },
 
     setTrackStartListener: function(entry, listener){
         sp.TrackEntryListeners.getListeners(entry).startListener = listener;
     },
 
-    setTrackInterruptListener: function(entry, listener){
-        sp.TrackEntryListeners.getListeners(entry).interruptListener = listener;
-    },
-
     setTrackEndListener: function(entry, listener){
         sp.TrackEntryListeners.getListeners(entry).endListener = listener;
-    },
-
-    setTrackDisposeListener: function(entry, listener){
-        sp.TrackEntryListeners.getListeners(entry).disposeListener = listener;
     },
 
     setTrackCompleteListener: function(entry, listener){
@@ -333,8 +265,73 @@ sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
         sp.TrackEntryListeners.getListeners(entry).eventListener = listener;
     },
 
+    onTrackEntryEvent: function(traceIndex, type, event, loopCount){
+        var entry = this._state.getCurrent(traceIndex);
+        if(!entry.rendererObject)
+            return;
+        var listeners = entry.rendererObject;
+        switch (type){
+            case sp.ANIMATION_EVENT_TYPE.START:
+                if(listeners.startListener)
+                    listeners.startListener(traceIndex);
+                break;
+            case sp.ANIMATION_EVENT_TYPE.END:
+                if(listeners.endListener)
+                    listeners.endListener(traceIndex);
+                break;
+            case sp.ANIMATION_EVENT_TYPE.COMPLETE:
+                if(listeners.completeListener)
+                    listeners.completeListener(traceIndex, loopCount);
+                break;
+            case sp.ANIMATION_EVENT_TYPE.EVENT:
+                if(listeners.eventListener)
+                    listeners.eventListener(traceIndex, event);
+                break;
+        }
+    },
+
+    onAnimationStateEvent: function(trackIndex, type, event, loopCount) {
+        switch(type){
+            case sp.ANIMATION_EVENT_TYPE.START:
+                if(this._startListener)
+                    this._startListener(trackIndex);
+                break;
+            case sp.ANIMATION_EVENT_TYPE.END:
+                if(this._endListener)
+                    this._endListener(trackIndex);
+                break;
+            case sp.ANIMATION_EVENT_TYPE.COMPLETE:
+                if(this._completeListener)
+                    this._completeListener(trackIndex, loopCount);
+                break;
+            case sp.ANIMATION_EVENT_TYPE.EVENT:
+                if(this._eventListener)
+                    this._eventListener(trackIndex, event);
+                break;
+        }
+    },
+
     getState: function(){
         return this._state;
+    },
+
+    _onAnimationStateStart: function (trackIndex) {
+        this._animationStateCallback(trackIndex, sp.ANIMATION_EVENT_TYPE.START, null, 0);
+    },
+    _onAnimationStateEnd: function (trackIndex) {
+        this._animationStateCallback(trackIndex, sp.ANIMATION_EVENT_TYPE.END, null, 0);
+    },
+    _onAnimationStateComplete: function (trackIndex, count) {
+        this._animationStateCallback(trackIndex, sp.ANIMATION_EVENT_TYPE.COMPLETE, null, count);
+    },
+    _onAnimationStateEvent: function (trackIndex, event) {
+        this._animationStateCallback(trackIndex, sp.ANIMATION_EVENT_TYPE.EVENT, event, 0);
+    },
+    _animationStateCallback: function (trackIndex, type, event, loopCount) {
+        this.onAnimationStateEvent(trackIndex, type, event, loopCount);
+        if (this._target && this._callback) {
+            this._callback.call(this._target, this, trackIndex, type, event, loopCount)
+        }
     }
 });
 
@@ -346,6 +343,6 @@ sp.SkeletonAnimation = sp.Skeleton.extend(/** @lends sp.SkeletonAnimation# */{
  * @param {Number} [scale] scale can be specified on the JSON or binary loader which will scale the bone positions, image sizes, and animation translations.
  * @returns {sp.Skeleton}
  */
-sp.SkeletonAnimation.createWithJsonFile = sp.SkeletonAnimation.create = function (skeletonDataFile, atlasFile/* or atlas*/, scale) {
+sp.SkeletonAnimation.create = function (skeletonDataFile, atlasFile/* or atlas*/, scale) {
     return new sp.SkeletonAnimation(skeletonDataFile, atlasFile, scale);
 };

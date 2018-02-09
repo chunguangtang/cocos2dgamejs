@@ -33,7 +33,6 @@
  * @param {Number} id
  */
 cc.Touch = cc.Class.extend(/** @lends cc.Touch# */{
-    _lastModified: 0,
     _point:null,
     _prevPoint:null,
     _id:0,

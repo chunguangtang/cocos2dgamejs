@@ -34,7 +34,9 @@
             "core",
 
             "cocos2d/compression/ZipUtils.js",
-            "cocos2d/compression/base64.js"
+            "cocos2d/compression/base64.js",
+            "cocos2d/compression/gzip.js",
+            "cocos2d/compression/zlib.min.js"
         ],
         "core" : [
             "cocos2d/core/event-manager/CCEventHelper.js",
@@ -49,6 +51,8 @@
             "cocos2d/core/platform/CCConfig.js",
             "cocos2d/core/platform/miniFramework.js",
             "cocos2d/core/platform/CCMacro.js",
+            "cocos2d/core/platform/CCTypesWebGL.js",
+            "cocos2d/core/platform/CCTypesPropertyDefine.js",
             "cocos2d/core/platform/CCTypes.js",
             "cocos2d/core/platform/CCEGLView.js",
             "cocos2d/core/platform/CCScreen.js",
@@ -68,7 +72,6 @@
             "cocos2d/core/event-manager/CCEventManager.js",
             "cocos2d/core/event-manager/CCEventExtension.js",
 
-            "cocos2d/core/renderer/GlobalVertexBuffer.js",
             "cocos2d/core/renderer/RendererCanvas.js",
             "cocos2d/core/renderer/RendererWebGL.js",
             "cocos2d/core/renderer/DirtyRegion.js",
@@ -153,12 +156,13 @@
         ],
         "labels" : [
             "core",
-            "cocos2d/labels/CCLabelBMFont.js",
-            "cocos2d/labels/CCLabelBMFontCanvasRenderCmd.js",
-            "cocos2d/labels/CCLabelBMFontWebGLRenderCmd.js",
+
             "cocos2d/labels/CCLabelAtlas.js",
             "cocos2d/labels/CCLabelAtlasCanvasRenderCmd.js",
-            "cocos2d/labels/CCLabelAtlasWebGLRenderCmd.js"
+            "cocos2d/labels/CCLabelAtlasWebGLRenderCmd.js",
+            "cocos2d/labels/CCLabelBMFont.js",
+            "cocos2d/labels/CCLabelBMFontCanvasRenderCmd.js",
+            "cocos2d/labels/CCLabelBMFontWebGLRenderCmd.js"
         ],
         "menus" : [
             "core", "actions",
@@ -228,7 +232,6 @@
             "cocos2d/shaders/CCShaders.js",
             "cocos2d/shaders/CCShaderCache.js",
             "cocos2d/shaders/CCGLProgram.js",
-            "cocos2d/shaders/CCGLProgramState.js",
             "cocos2d/shaders/CCGLStateCache.js"
         ],
         "shape-nodes" : [
@@ -246,9 +249,6 @@
         ],
         "tilemap" : [
             "core", "compression",
-
-            "cocos2d/compression/gzip.js",
-            "cocos2d/compression/zlib.min.js",
 
             "cocos2d/tilemap/CCTGAlib.js",
             "cocos2d/tilemap/CCTMXTiledMap.js",
@@ -292,6 +292,7 @@
         "editbox" : [
             "core", "gui",
 
+            "extensions/editbox/CCdomNode.js",
             "extensions/editbox/CCEditBox.js"
         ],
         "ccpool" : [
@@ -441,7 +442,6 @@
             "extensions/spine/Spine.js",
             "extensions/spine/CCSkeleton.js",
             "extensions/spine/CCSkeletonAnimation.js",
-            "extensions/spine/CCSkeletonTexture.js",
             "extensions/spine/CCSkeletonCanvasRenderCmd.js",
             "extensions/spine/CCSkeletonWebGLRenderCmd.js"
         ],

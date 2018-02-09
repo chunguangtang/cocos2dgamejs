@@ -277,16 +277,15 @@ cc.EventListener.CUSTOM = 8;
 
 cc._EventListenerCustom = cc.EventListener.extend({
     _onCustomEvent: null,
-    ctor: function (listenerId, callback, target) {
+    ctor: function (listenerId, callback) {
         this._onCustomEvent = callback;
-        this._target = target;
+        var selfPointer = this;
+        var listener = function (event) {
+            if (selfPointer._onCustomEvent !== null)
+                selfPointer._onCustomEvent(event);
+        };
 
-        cc.EventListener.prototype.ctor.call(this, cc.EventListener.CUSTOM, listenerId, this._callback);
-    },
-
-    _callback: function (event) {
-        if (this._onCustomEvent !== null)
-            this._onCustomEvent.call(this._target, event);
+        cc.EventListener.prototype.ctor.call(this, cc.EventListener.CUSTOM, listenerId, listener);
     },
 
     checkAvailable: function () {
@@ -309,31 +308,31 @@ cc._EventListenerMouse = cc.EventListener.extend({
     onMouseScroll: null,
 
     ctor: function () {
-        cc.EventListener.prototype.ctor.call(this, cc.EventListener.MOUSE, cc._EventListenerMouse.LISTENER_ID, this._callback);
-    },
-
-    _callback: function (event) {
-        var eventType = cc.EventMouse;
-        switch (event._eventType) {
-            case eventType.DOWN:
-                if (this.onMouseDown)
-                    this.onMouseDown(event);
-                break;
-            case eventType.UP:
-                if (this.onMouseUp)
-                    this.onMouseUp(event);
-                break;
-            case eventType.MOVE:
-                if (this.onMouseMove)
-                    this.onMouseMove(event);
-                break;
-            case eventType.SCROLL:
-                if (this.onMouseScroll)
-                    this.onMouseScroll(event);
-                break;
-            default:
-                break;
-        }
+        var selfPointer = this;
+        var listener = function (event) {
+            var eventType = cc.EventMouse;
+            switch (event._eventType) {
+                case eventType.DOWN:
+                    if (selfPointer.onMouseDown)
+                        selfPointer.onMouseDown(event);
+                    break;
+                case eventType.UP:
+                    if (selfPointer.onMouseUp)
+                        selfPointer.onMouseUp(event);
+                    break;
+                case eventType.MOVE:
+                    if (selfPointer.onMouseMove)
+                        selfPointer.onMouseMove(event);
+                    break;
+                case eventType.SCROLL:
+                    if (selfPointer.onMouseScroll)
+                        selfPointer.onMouseScroll(event);
+                    break;
+                default:
+                    break;
+            }
+        };
+        cc.EventListener.prototype.ctor.call(this, cc.EventListener.MOUSE, cc._EventListenerMouse.LISTENER_ID, listener);
     },
 
     clone: function () {
@@ -502,12 +501,11 @@ cc._EventListenerFocus = cc.EventListener.extend({
     },
     onFocusChanged: null,
     ctor: function(){
-        cc.EventListener.prototype.ctor.call(this, cc.EventListener.FOCUS, cc._EventListenerFocus.LISTENER_ID, this._callback);
-    },
-    _callback: function (event) {
-        if (this.onFocusChanged) {
-            this.onFocusChanged(event._widgetLoseFocus, event._widgetGetFocus);
-        }
+        var listener = function(event){
+            if(this.onFocusChanged)
+                this.onFocusChanged(event._widgetLoseFocus, event._widgetGetFocus);
+        };
+        cc.EventListener.prototype.ctor.call(this, cc.EventListener.FOCUS, cc._EventListenerFocus.LISTENER_ID, listener);
     }
 });
 

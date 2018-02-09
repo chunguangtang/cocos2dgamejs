@@ -25,9 +25,9 @@
 /**
  * cc.PhysicsDebugNode's rendering objects of WebGL
  */
-(function () {
+(function(){
     cc.PhysicsDebugNode.WebGLRenderCmd = function (renderableObject) {
-        this._rootCtor(renderableObject);
+        cc.Node.WebGLRenderCmd.call(this, renderableObject);
         this._needDraw = true;
         this._matrix = new cc.math.Matrix4();
         this._matrix.identity();
@@ -54,7 +54,8 @@
 
         //cc.DrawNode.prototype.draw.call(node);
         cc.glBlendFunc(node._blendFunc.src, node._blendFunc.dst);
-        this._glProgramState.apply(this._matrix);
+        this._shaderProgram.use();
+        this._shaderProgram._setUniformForMVPMatrixWithMat4(this._matrix);
         node._render();
 
         node.clear();

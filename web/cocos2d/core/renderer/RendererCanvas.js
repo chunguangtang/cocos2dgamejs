@@ -163,9 +163,9 @@ cc.rendererCanvas = {
 
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, viewport.width, viewport.height);
-        if (this._clearColor.r !== 255 ||
-            this._clearColor.g !== 255 ||
-            this._clearColor.b !== 255) {
+        if (this._clearColor.r !== 0 ||
+            this._clearColor.g !== 0 ||
+            this._clearColor.b !== 0) {
             wrapper.setFillStyle(this._clearFillStyle);
             wrapper.setGlobalAlpha(this._clearColor.a);
             ctx.fillRect(0, 0, viewport.width, viewport.height);
@@ -213,7 +213,7 @@ cc.rendererCanvas = {
         scaleX = cc.isUndefined(scaleX) ? 1 : scaleX;
         scaleY = cc.isUndefined(scaleY) ? 1 : scaleY;
         instanceID = instanceID || this._currentID;
-        var i, locCmds = this._cacheToCanvasCmds[instanceID], len;
+        var locCmds = this._cacheToCanvasCmds[instanceID], i, len;
         ctx.computeRealOffsetY();
         for (i = 0, len = locCmds.length; i < len; i++) {
             locCmds[i].rendering(ctx, scaleX, scaleY);

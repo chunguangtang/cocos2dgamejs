@@ -98,14 +98,13 @@ cc.game.addEventListener(cc.game.EVENT_RENDERER_INITED, function () {
 
                 cc.kmGLMultMatrix(matrixPerspective);
 
+                cc.kmGLMatrixMode(cc.KM_GL_MODELVIEW);
+                cc.kmGLLoadIdentity();
                 var eye = new cc.math.Vec3(-ox + size.width / 2, -oy + size.height / 2, zeye);
                 var center = new cc.math.Vec3( -ox + size.width / 2, -oy + size.height / 2, 0.0);
                 var up = new cc.math.Vec3( 0.0, 1.0, 0.0);
                 matrixLookup.lookAt(eye, center, up);
                 cc.kmGLMultMatrix(matrixLookup);
-                
-                cc.kmGLMatrixMode(cc.KM_GL_MODELVIEW);
-                cc.kmGLLoadIdentity();
                 break;
             case cc.Director.PROJECTION_CUSTOM:
                 if (_t._projectionDelegate)
@@ -160,6 +159,11 @@ cc.game.addEventListener(cc.game.EVENT_RENDERER_INITED, function () {
             cc.eventManager.setEnabled(true);
     };
 
+    _p._clear = function () {
+        var gl = cc._renderContext;
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    };
+
     _p.getVisibleSize = function () {
         //if (this._openGLView) {
         return this._openGLView.getVisibleSize();
@@ -177,7 +181,7 @@ cc.game.addEventListener(cc.game.EVENT_RENDERER_INITED, function () {
     };
 
     _p.getZEye = function () {
-        return (this._winSizeInPoints.height / 1.15469993750 );
+        return (this._winSizeInPoints.height / 1.1566 );
     };
 
     _p.setViewport = function () {
